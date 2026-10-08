@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة مراقبة سجلات الشفافية | CT Log Monitor</title>
+  <!-- Google Fonts: Cairo & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+              dark: '#0f172a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Cairo', sans-serif; }
+    .mono-text { font-family: 'Inter', monospace; direction: ltr; text-align: left; }
+    .glassmorphism {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
+  </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 border-b border-slate-800 bg-[#0b0f19]/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Main Logo / Shield Icon -->
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 p-[1px] shadow-lg shadow-emerald-500/20">
+          <div class="w-full h-full bg-[#0d1424] rounded-2xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold tracking-tight text-white">مرصد شفافية الشهادات الرقمية</h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v<span id="appVersion">89.30</span></span>
+          </div>
+          <p class="text-xs text-slate-400">نظام المراقبة الموحد لسجلات Certificate Transparency (CT Logs)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="downloadJSON()" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-2 transition-all">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.5V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+          </svg>
+          <span>تصدير JSON</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- KPI / Statistics Cards with Global-Grade Icons -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Card 1 -->
+      <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-slate-400">إجمالي المشغلين</p>
+            <h3 class="text-2xl font-bold text-white mt-1" id="statOperators">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+          <span>Google, Cloudflare, DigiCert وغيرها</span>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-slate-400">السجلات العاملة (Usable)</p>
+            <h3 class="text-2xl font-bold text-emerald-400 mt-1" id="statUsable">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>جاهزة لاستقبال وتوثيق الشهادات</span>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-slate-400">سجلات البلاطات (Tiled Logs)</p>
+            <h3 class="text-2xl font-bold text-amber-400 mt-1" id="statTiled">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span>معيار Sunlight / Tiled Merkle Tree الحديث</span>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-slate-400">إجمالي السجلات (Logs Total)</p>
+            <h3 class="text-2xl font-bold text-violet-400 mt-1" id="statTotalLogs">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-violet-400"></span>
+          <span>موزعة بين RFC6962 وTiled</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters & Search Toolbar -->
+    <section class="glassmorphism p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between">
+      <!-- Search Input -->
+      <div class="relative w-full md:w-96">
+        <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+          </svg>
+        </div>
+        <input type="text" id="searchInput" oninput="renderApp()" placeholder="ابحث باسم السجل، الرابط، أو المفتاح..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pr-10 pl-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition">
+      </div>
+
+      <!-- Quick Operator Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto custom-scroll pb-1 md:pb-0" id="operatorFilterContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Filter Stats info -->
+    <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+      <div id="filterCount">عرض السجلات...</div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Usable
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span> Qualified
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span> Read-only
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span> Retired
+        </div>
+      </div>
+    </div>
+
+    <!-- Operators and Logs Grid / Container -->
+    <section id="logsContainer" class="space-y-6">
+      <!-- Injected by JavaScript -->
+    </section>
+
+  </main>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+          <div id="modalOperatorIcon" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center"></div>
+          <div>
+            <h3 id="modalTitle" class="text-lg font-bold text-white">تفاصيل السجل</h3>
+            <p id="modalOperator" class="text-xs text-slate-400"></p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs max-h-[65vh] overflow-y-auto custom-scroll pr-1">
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">المعرف (Log ID):</label>
+          <div class="flex items-center gap-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+            <span id="modalLogId" class="mono-text text-emerald-400 flex-1 truncate"></span>
+            <button onclick="copyToClipboard(document.getElementById('modalLogId').innerText)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">نسخ</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">المفتاح العام (Public Key - Base64):</label>
+          <div class="relative bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+            <pre id="modalKey" class="mono-text text-slate-300 text-[11px] whitespace-pre-wrap break-all max-h-24 overflow-y-auto custom-scroll"></pre>
+            <button onclick="copyToClipboard(document.getElementById('modalKey').innerText)" class="absolute top-2 left-2 px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px]">نسخ</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3" id="modalExtraFields"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-6 z-50 transform -translate-y-4 opacity-0 pointer-events-none transition-all duration-300 bg-emerald-500 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-sm">
+    <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+    <span id="toastMsg">تم النسخ بنجاح!</span>
+  </div>
+
+  <!-- Embedded Clean Data & Application Engine -->
+  <script>
+    // Certificate Transparency Log Data Source
+    const ctData = {
+      "version": "89.30",
+      "log_list_timestamp": 1787664926000,
+      "operators": [
+        {
+          "name": "Google",
+          "email": ["google-ct-logs@googlegroups.com"],
+          "logs": [
+            {
+              "description": "Google 'Argon2026h2' log",
+              "log_id": "1219ENGn9XfCx+lf1wC/+YLJM1pl4dCzAXMXwMjFaXc=",
+              "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKjpni/66DIYrSlGK6Rf+e6F2c/28ZUvDJ79N81+gyimAESAyeNZ++TRgjHWg9TVQnKHTSU0T1TtqDupFnSQTIg==",
+              "url": "https://ct.googleapis.com/logs/us1/argon2026h2/",
+              "mmd": 86400,
+              "state": { "usable": { "timestamp": 1727734767000 } },
+              "temporal_interval": { "start_inclusive": 1782864000000, "end_exclusive": 1798761600000 }
+            },
+            {
+              "description": "Google 'Argon2027h1'",
+              "log_id": "1tWNqdAXU/NqSqDHV0kCr+vH3CzTjNn3ZMgMiRkenwI=",
+              "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKHRm0H/zUaFA6Idz5cGvGO3tCPQyfGMgJmVBOPyKAP6mGM1IiNXi4CLomOUyYj0YN74p+eGVApFMsM4h/jzCsA==",
+              "url": "https://ct.googleapis.com/logs/us1/argon2027h1/",
+              "mmd": 86400,
+              "state": { "usable": { "timestamp": 1766881800000 } },
+              "temporal_interval": { "start_inclusive": 1798761600000, "end_exclusive": 1814400000000 }
+            },
+            {
+              "description": "Google 'Xenon2026h2' log",
+              "log_id": "2AlVO5RPev/IFhlvlE+Fq7D4/F6HVSYPFdEucrtFSxQ=",
+              "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5Xd4lXEos5XJpcx6TOgyA5Z7/C4duaTbQ6C9aXL5Rbqaw+mW1XDnDX7JlRUninIwZYZDU9wRRBhJmCVopzwFvw==",
+              "url": "https://ct.googleapis.com/logs/eu1/xenon2026h2/",
+              "mmd": 86400,
+              "state": { "usable": { "timestamp": 1727734767000 } },
+              "temporal_interval": { "start_inclusive": 1782864000000, "end_exclusive": 1798761600000 }
+            },
+            {
+              "description": "Google 'Xenon2027h1'",
+              "log_id": "RMK9DOkUDmSlyUoBkwpaobs1lw4A7hEWiWgqHETXtWY=",
+              "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/6WcA4VRSljIfTdY48+pFRLLtLrmTb88cGDdl8Gv3E2LduG4jgJ3AK5iNMFGhpbRRLi5B3rPlBaXVywuR5IFDg==",
+              "url": "https://ct.googleapis.com/logs/eu1/xenon2027h1/",
+              "mmd": 86400,
+              "state": { "usable": { "timestamp": 1766881800000 } },
+              "temporal_interval": { "start_inclusive": 1798761600000, "end_exclusive": 1814400000000 }
+            }
+          ],
+          "tiled_logs": [
+            {
+              "description": "Google 'ParcelYard2026h2' log",
+              "log_id": "utuIpG+cr6QJDoLlk1bbbni0pT9YLbCBl5UkLym2jJg=",
+              "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEP2H56bHx6pPm5mCku6PFpeRuA5Ux0gs8iwXIVhvVdbojs0pPwZqLtlIEoJNbjxMEePTYo/qDW85AjhMJITlavA==",
+              "submission_url": "https://parcelyard2026h2.prod.certificate.transparency.goog/",
+              "monitoring_url": "https://storage.googleapis.com/parcelyard2026h2.prod.certificate.transparency.goog/",
+              "mmd": 60,
+              "state": { "qualified": { "timestamp": 1781895600000 } },
+              "temporal_interval": { "start_inclusive": 1782864000000, "end_exclusive": 1798761600000 }
+            },
+            {
+              "description": "Google 'ParcelYard2027h1' log",
+              "log_id": "HIl0B+YBCgEpO7Z439ejaM6xjMpSHcyk04bkoy5bXQQ=",
+              "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEX7i7gYwmBxpiLXAlM/VLk4BFzspJRmZA86iReO7NVRlwGL1KWb/Dv5DRXJNBZd+9uREkNUTee5yBy2dRdRGa0w==",
+              "submission_url": "
